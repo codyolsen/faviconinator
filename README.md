@@ -1,4 +1,4 @@
-# faviconinator
+# faviconinator ![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
 
 ## Why do I need this?
 
@@ -8,8 +8,6 @@ Step right up, folks! One gleaming SVG rolls in, a full parade of browser-ready 
 GAD ZOOKS!
 
 ## Speedy Boi
-
-![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
 
 Benchmarks (darwin/arm64, ImageMagick on PATH):
 - workers=1: ~4.25s/op
