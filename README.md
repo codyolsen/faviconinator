@@ -1,13 +1,20 @@
 # faviconinator
 
+## Why do I need this?
+
+Generate a full favicon set (PNG, ICO, SVG) from a single SVG source. 
+
+Step right up, folks! One gleaming SVG rolls in, a full parade of browser-ready icons rolls out—every size, every platform, even the ICO—fresh off the line in one smooth command, CI-stamped and ready to bolt onto your site’s chrome.
+GAD ZOOKS!
+
+## Speedy Boi
+
 ![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
 
 Benchmarks (darwin/arm64, ImageMagick on PATH):
 - workers=1: ~4.25s/op
 - workers=16: ~0.47s/op
 - Speedup: ~9.0x (≈88.9% time reduction)
-
-Generate a full favicon set (PNG, ICO, SVG) from a single SVG source.
 
 ## Requirements
 
