@@ -3,8 +3,24 @@
 ![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
 
 <p>
-  <img alt="favicon 96px preview" src="internal/generate/testdata/complexahexagon.svg" width="96" height="96" />
-  <img alt="favicon 192px preview" src="internal/generate/testdata/complexahexagon.svg" width="192" height="192" />
+  <img alt="icon 32px" src="internal/generate/testdata/complexahexagon.svg" width="32" height="32" />
+  <img alt="icon 36px" src="internal/generate/testdata/complexahexagon.svg" width="36" height="36" />
+  <img alt="icon 48px" src="internal/generate/testdata/complexahexagon.svg" width="48" height="48" />
+  <img alt="icon 57px" src="internal/generate/testdata/complexahexagon.svg" width="57" height="57" />
+  <img alt="icon 60px" src="internal/generate/testdata/complexahexagon.svg" width="60" height="60" />
+  <img alt="icon 70px" src="internal/generate/testdata/complexahexagon.svg" width="70" height="70" />
+  <img alt="icon 72px" src="internal/generate/testdata/complexahexagon.svg" width="72" height="72" />
+  <img alt="icon 76px" src="internal/generate/testdata/complexahexagon.svg" width="76" height="76" />
+  <img alt="icon 96px" src="internal/generate/testdata/complexahexagon.svg" width="96" height="96" />
+  <img alt="icon 114px" src="internal/generate/testdata/complexahexagon.svg" width="114" height="114" />
+  <img alt="icon 120px" src="internal/generate/testdata/complexahexagon.svg" width="120" height="120" />
+  <img alt="icon 144px" src="internal/generate/testdata/complexahexagon.svg" width="144" height="144" />
+  <img alt="icon 150px" src="internal/generate/testdata/complexahexagon.svg" width="150" height="150" />
+  <img alt="icon 152px" src="internal/generate/testdata/complexahexagon.svg" width="152" height="152" />
+  <img alt="icon 180px" src="internal/generate/testdata/complexahexagon.svg" width="180" height="180" />
+  <img alt="icon 192px" src="internal/generate/testdata/complexahexagon.svg" width="192" height="192" />
+  <img alt="icon 310px" src="internal/generate/testdata/complexahexagon.svg" width="310" height="310" />
+  <img alt="icon 512px" src="internal/generate/testdata/complexahexagon.svg" width="512" height="512" />
 </p>
 
 Benchmarks (darwin/arm64, ImageMagick on PATH):
@@ -62,7 +78,7 @@ Stats: command prints total assets, destination, duration, and worker count afte
 Outputs:
 
 - `favicon.ico`
-- `favicon.svg` (with white fills stripped to keep transparency)
+- `favicon.svg` (copied verbatim from source)
 - Android/Apple/Microsoft sized PNGs (32px–512px)
 
 Generated PNG sizes:
@@ -71,6 +87,26 @@ Generated PNG sizes:
 - Apple touch: 57, 60, 72, 76, 114, 120, 144, 152, 180 (also `apple-icon.png`, `apple-icon-precomposed.png`, `apple-touch-icon.png`)
 - Favicons: 32, 96, 96
 - Microsoft tiles: 70, 144, 150, 310
+
+All generated PNGs (smallest to largest):
+- 32: `favicon-32x32.png`
+- 36: `android-icon-36x36.png`
+- 48: `android-icon-48x48.png`
+- 57: `apple-icon-57x57.png`
+- 60: `apple-icon-60x60.png`
+- 70: `ms-icon-70x70.png`
+- 72: `android-icon-72x72.png`, `apple-icon-72x72.png`
+- 76: `apple-icon-76x76.png`
+- 96: `android-icon-96x96.png`, `favicon-96x96.png`, `favicon.png`
+- 114: `apple-icon-114x114.png`
+- 120: `apple-icon-120x120.png`
+- 144: `android-icon-144x144.png`, `apple-icon-144x144.png`, `ms-icon-144x144.png`
+- 150: `ms-icon-150x150.png`
+- 152: `apple-icon-152x152.png`
+- 180: `apple-icon-180x180.png`, `apple-icon.png`, `apple-icon-precomposed.png`, `apple-touch-icon.png`
+- 192: `android-icon-192x192.png`, `android-chrome-192x192.png`
+- 310: `ms-icon-310x310.png`
+- 512: `android-chrome-512x512.png`
 
 Add to your site (HTML example):
 
