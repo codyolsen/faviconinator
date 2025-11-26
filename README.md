@@ -1,5 +1,17 @@
 # faviconinator
 
+![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
+
+<p>
+  <img alt="favicon 96px preview" src="internal/generate/testdata/complexahexagon.svg" width="96" height="96" />
+  <img alt="favicon 192px preview" src="internal/generate/testdata/complexahexagon.svg" width="192" height="192" />
+</p>
+
+Benchmarks (darwin/arm64, ImageMagick on PATH):
+- workers=1: ~4.25s/op
+- workers=16: ~0.47s/op
+- Speedup: ~9.0x (≈88.9% time reduction)
+
 Generate a full favicon set (PNG, ICO, SVG) from a single SVG source.
 
 ## Requirements
