@@ -1,0 +1,16 @@
+# Build artifacts
+bin/
+dist/
+
+# Tooling
+coverage.out
+
+# macOS
+.DS_Store
+
+# Local Go build cache override
+.gocache/
+
+# Build output
+/build/
+!/build/.gitkeep
