@@ -1,5 +1,12 @@
 # faviconinator ![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
 
+Use it now:
+```sh
+go install github.com/codyolsen/faviconinator/cmd/faviconinator@latest
+faviconinator bl_square.svg
+```
+
+
 ## Why do I need this?
 
 Generate a full favicon set (PNG, ICO, SVG) from a single SVG source. 
@@ -47,7 +54,7 @@ Flags:
 Example:
 
 ```sh
-faviconinator -out dist -color "#3366ff" bl_square.svg
+faviconinator bl_square.svg
 ```
 
 Platform reference links:
