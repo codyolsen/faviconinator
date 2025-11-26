@@ -30,15 +30,17 @@ func run() error {
 		showVersion bool
 		jobs        int
 		jsonOut     bool
+		renderer    string
 	)
 
 	flag.StringVar(&outDir, "out", "", "output directory (default: build/<input basename>)")
-	flag.StringVar(&color, "color", "", "hex color (e.g. #ff6600) to tint the icon")
+	flag.StringVar(&color, "color", "", "(reserved) hex color to tint the icon")
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.BoolVar(&verbose, "verbose", false, "verbose logging")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
 	flag.IntVar(&jobs, "jobs", 0, "number of concurrent workers (0 = NumCPU)")
 	flag.BoolVar(&jsonOut, "json", false, "print result stats as JSON")
+	flag.StringVar(&renderer, "renderer", "auto", "png renderer: auto (default), magick, or rsvg (uses rsvg-convert)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [flags] input.svg\n\n", os.Args[0])
@@ -72,6 +74,7 @@ func run() error {
 		Color:     color,
 		Verbose:   verbose,
 		Workers:   jobs,
+		Renderer:  renderer,
 	}
 
 	start := time.Now()

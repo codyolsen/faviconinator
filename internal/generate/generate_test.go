@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestWriteFaviconSVGStripsWhiteFills(t *testing.T) {
+func TestWriteFaviconSVGCopiesVerbatim(t *testing.T) {
 	tmp := t.TempDir()
 	src := filepath.Join(tmp, "icon.svg")
 	dst := filepath.Join(tmp, "favicon.svg")
@@ -27,11 +27,8 @@ func TestWriteFaviconSVGStripsWhiteFills(t *testing.T) {
 	}
 
 	got := string(out)
-	if containsAny(got, []string{`fill="#fff"`, `fill="#ffffff"`, `fill="white"`}) {
-		t.Fatalf("expected white fills to be removed, got %q", got)
-	}
-	if !containsAny(got, []string{`fill="none"`}) {
-		t.Fatalf("expected fill=\"none\" placeholder, got %q", got)
+	if got != original {
+		t.Fatalf("expected verbatim copy, got %q", got)
 	}
 }
 

@@ -18,6 +18,7 @@ Generate a full favicon set (PNG, ICO, SVG) from a single SVG source.
 
 - Go 1.22+
 - ImageMagick 7+ with the `magick` binary on your `PATH` (install guide: [imagemagick.org/script/download.php](https://imagemagick.org/script/download.php))
+- Optional (better SVG rendering): `rsvg-convert` from librsvg. macOS: `brew install librsvg`.
 
 ## Install
 
@@ -36,11 +37,12 @@ faviconinator [flags] input.svg
 Flags:
 
 - `-out` (default `build/<input basename>`): directory to write generated files
-- `-color`: optional hex color (e.g. `#ff6600`) to tint the icon
+- `-color`: (reserved) hex color to tint the icon
 - `-v` / `-verbose`: verbose logging
 - `-version`: print version and exit
 - `-jobs`: number of concurrent workers (default: CPU count)
 - `-json`: print summary (files, outputs, workers, duration) as JSON
+- `-renderer`: PNG renderer (`auto` default prefers `rsvg-convert` if present, else `magick`)
 
 Example:
 

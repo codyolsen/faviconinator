@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -18,9 +19,10 @@ import (
 type Options struct {
 	Input     string // path to the source SVG
 	OutputDir string // directory to write generated files
-	Color     string // optional hex color (e.g. #ff6600) to tint the icon
+	Color     string // (unused for now) optional hex color to tint the icon
 	Verbose   bool   // emit progress to stderr
 	Workers   int    // number of concurrent workers (0 = NumCPU)
+	Renderer  string // png renderer: auto (default), magick, or rsvg
 }
 
 func (o Options) validate() error {
@@ -39,6 +41,9 @@ func (o Options) validate() error {
 	}
 	if o.Workers < 0 {
 		return errors.New("workers cannot be negative")
+	}
+	if o.Renderer != "" && o.Renderer != "auto" && o.Renderer != "magick" && o.Renderer != "rsvg" {
+		return fmt.Errorf("renderer must be auto, magick, or rsvg (got %q)", o.Renderer)
 	}
 	return nil
 }
@@ -101,9 +106,9 @@ func Generate(ctx context.Context, opts Options) (Stats, error) {
 		return stats, fmt.Errorf("create output dir: %w", err)
 	}
 
-	magickPath, err := exec.LookPath("magick")
+	renderer, paths, err := pickRenderer(opts.Renderer)
 	if err != nil {
-		return stats, errors.New("ImageMagick 'magick' binary not found on PATH; install ImageMagick 7+")
+		return stats, err
 	}
 
 	var mu sync.Mutex
@@ -115,7 +120,7 @@ func Generate(ctx context.Context, opts Options) (Stats, error) {
 		icon := icon // capture
 		tasks = append(tasks, func() error {
 			out := filepath.Join(opts.OutputDir, icon.Name)
-			if err := renderPNG(ctx, magickPath, opts.Input, out, icon.Size, opts.Color); err != nil {
+			if err := renderPNG(ctx, renderer, paths, opts.Input, out, icon.Size, opts.Color); err != nil {
 				return err
 			}
 			mu.Lock()
@@ -130,7 +135,7 @@ func Generate(ctx context.Context, opts Options) (Stats, error) {
 
 	tasks = append(tasks, func() error {
 		icoOut := filepath.Join(opts.OutputDir, "favicon.ico")
-		if err := renderICO(ctx, magickPath, opts.Input, icoOut, opts.Color); err != nil {
+		if err := renderICO(ctx, renderer, paths, opts.Input, icoOut, opts.Color); err != nil {
 			return err
 		}
 		mu.Lock()
@@ -165,16 +170,16 @@ func Generate(ctx context.Context, opts Options) (Stats, error) {
 	return stats, nil
 }
 
-func renderPNG(ctx context.Context, magickPath, input, output string, size int, color string) error {
+func renderPNG(ctx context.Context, renderer string, paths renderPaths, input, output string, size int, color string) error {
+	if renderer == "rsvg" {
+		return renderPNGRSVG(ctx, paths.rsvg, input, output, size)
+	}
+
 	args := []string{
-		magickPath,
+		paths.magick,
 		"-background", "none",
 		"-density", "512",
 		input,
-	}
-
-	if color != "" {
-		args = append(args, "-fill", color, "-colorize", "100")
 	}
 
 	args = append(args,
@@ -193,6 +198,21 @@ func renderPNG(ctx context.Context, magickPath, input, output string, size int, 
 		return fmt.Errorf("render %s: %w", output, err)
 	}
 	return nil
+}
+
+func renderPNGRSVG(ctx context.Context, rsvgPath, input, output string, size int) error {
+	args := []string{
+		rsvgPath,
+		"--background-color=transparent",
+		"-w", strconv.Itoa(size),
+		"-h", strconv.Itoa(size),
+		"-o", output,
+		input,
+	}
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // runConcurrent executes all tasks with a bounded worker pool.
@@ -258,22 +278,74 @@ type Stats struct {
 	Outputs  []string
 }
 
-func renderICO(ctx context.Context, magickPath, input, output string, color string) error {
+type renderPaths struct {
+	magick string
+	rsvg   string
+}
+
+func pickRenderer(requested string) (string, renderPaths, error) {
+	req := requested
+	if req == "" {
+		req = "auto"
+	}
+
+	var paths renderPaths
+
+	lookup := func(name string) (string, bool) {
+		p, err := exec.LookPath(name)
+		return p, err == nil
+	}
+
+	rsvgPath, haveRSVG := lookup("rsvg-convert")
+	magickPath, haveMagick := lookup("magick")
+
+	switch req {
+	case "rsvg":
+		if !haveRSVG {
+			return "", paths, errors.New("renderer 'rsvg' requested but rsvg-convert not found on PATH")
+		}
+		if !haveMagick {
+			return "", paths, errors.New("ImageMagick 'magick' required for ICO output; install ImageMagick 7+")
+		}
+		return "rsvg", renderPaths{magick: magickPath, rsvg: rsvgPath}, nil
+	case "magick":
+		if !haveMagick {
+			return "", paths, errors.New("renderer 'magick' requested but magick not found on PATH; install ImageMagick 7+")
+		}
+		return "magick", renderPaths{magick: magickPath}, nil
+	case "auto":
+		if haveRSVG && haveMagick {
+			return "rsvg", renderPaths{magick: magickPath, rsvg: rsvgPath}, nil
+		}
+		if haveMagick {
+			return "magick", renderPaths{magick: magickPath}, nil
+		}
+		return "", paths, errors.New("neither ImageMagick 'magick' nor 'rsvg-convert' found on PATH")
+	default:
+		return "", paths, fmt.Errorf("unknown renderer %q (use auto, magick, or rsvg)", requested)
+	}
+}
+
+func renderICO(ctx context.Context, renderer string, paths renderPaths, input, output string, color string) error {
+	tmp, err := os.CreateTemp("", "favicon-base-*.png")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	_ = tmp.Close()
+	defer os.Remove(tmpPath)
+
+	if err := renderPNG(ctx, renderer, paths, input, tmpPath, 512, color); err != nil {
+		return err
+	}
+
 	args := []string{
-		magickPath,
-		"-background", "none",
-		"-density", "512",
-		input,
-	}
-
-	if color != "" {
-		args = append(args, "-fill", color, "-colorize", "100")
-	}
-
-	args = append(args,
+		paths.magick,
+		tmpPath,
+		"-alpha", "on",
 		"-define", "icon:auto-resize=16,32,48,64",
 		output,
-	)
+	}
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
@@ -285,8 +357,7 @@ func renderICO(ctx context.Context, magickPath, input, output string, color stri
 	return nil
 }
 
-// writeFaviconSVG copies the SVG and strips common white-background fills
-// to make the favicon.svg transparent. This is a blunt text transform.
+// writeFaviconSVG copies the original SVG verbatim to favicon.svg.
 func writeFaviconSVG(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -299,29 +370,13 @@ func writeFaviconSVG(src, dst string) error {
 		return err
 	}
 
-	data := buf.Bytes()
-
-	// Replace typical "white background" fills with none.
-	// If your foreground uses white, this will nuke that too.
-	repls := [][]byte{
-		[]byte(`fill="#ffffff"`),
-		[]byte(`fill="#FFFFFF"`),
-		[]byte(`fill="#fff"`),
-		[]byte(`fill="#FFF"`),
-		[]byte(`fill="white"`),
-	}
-
-	for _, old := range repls {
-		data = bytes.ReplaceAll(data, old, []byte(`fill="none"`))
-	}
-
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = out.Close() }()
 
-	if _, err := out.Write(data); err != nil {
+	if _, err := out.Write(buf.Bytes()); err != nil {
 		return err
 	}
 	return out.Sync()
