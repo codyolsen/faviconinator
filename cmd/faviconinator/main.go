@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/codyolsen/faviconinator/internal/generate"
 )
@@ -26,6 +28,8 @@ func run() error {
 		color       string
 		verbose     bool
 		showVersion bool
+		jobs        int
+		jsonOut     bool
 	)
 
 	flag.StringVar(&outDir, "out", "", "output directory (default: build/<input basename>)")
@@ -33,6 +37,8 @@ func run() error {
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.BoolVar(&verbose, "verbose", false, "verbose logging")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
+	flag.IntVar(&jobs, "jobs", 0, "number of concurrent workers (0 = NumCPU)")
+	flag.BoolVar(&jsonOut, "json", false, "print result stats as JSON")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [flags] input.svg\n\n", os.Args[0])
@@ -65,7 +71,39 @@ func run() error {
 		OutputDir: outDir,
 		Color:     color,
 		Verbose:   verbose,
+		Workers:   jobs,
 	}
 
-	return generate.Generate(ctx, opts)
+	start := time.Now()
+	stats, err := generate.Generate(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	elapsed := time.Since(start)
+	if jsonOut {
+		type payload struct {
+			Files      int           `json:"files"`
+			Outputs    []string      `json:"outputs"`
+			Workers    int           `json:"workers"`
+			DurationMs float64       `json:"duration_ms"`
+			Elapsed    time.Duration `json:"elapsed_ns"`
+			Version    string        `json:"version"`
+		}
+		out := payload{
+			Files:      stats.Files,
+			Outputs:    stats.Outputs,
+			Workers:    stats.Workers,
+			DurationMs: float64(elapsed.Microseconds()) / 1000.0,
+			Elapsed:    elapsed,
+			Version:    version,
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(out)
+	}
+
+	fmt.Fprintf(os.Stderr, "Generated %d assets to %s in %s (workers=%d)\n",
+		stats.Files, opts.OutputDir, elapsed.Truncate(time.Millisecond), stats.Workers)
+	return nil
 }

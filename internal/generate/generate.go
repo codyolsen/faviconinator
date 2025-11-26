@@ -9,6 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"sync"
+	"time"
 )
 
 // Options controls how assets are generated.
@@ -17,6 +20,7 @@ type Options struct {
 	OutputDir string // directory to write generated files
 	Color     string // optional hex color (e.g. #ff6600) to tint the icon
 	Verbose   bool   // emit progress to stderr
+	Workers   int    // number of concurrent workers (0 = NumCPU)
 }
 
 func (o Options) validate() error {
@@ -32,6 +36,9 @@ func (o Options) validate() error {
 	}
 	if o.OutputDir == "" {
 		return errors.New("output directory is required")
+	}
+	if o.Workers < 0 {
+		return errors.New("workers cannot be negative")
 	}
 	return nil
 }
@@ -80,47 +87,82 @@ var pngIcons = []iconSpec{
 
 // Generate creates favicons and related assets from the given SVG.
 // It requires ImageMagick 7's `magick` binary to be available on PATH.
-func Generate(ctx context.Context, opts Options) error {
+func Generate(ctx context.Context, opts Options) (Stats, error) {
+	start := time.Now()
+	stats := Stats{
+		Workers: workerCount(opts.Workers),
+	}
+
 	if err := opts.validate(); err != nil {
-		return err
+		return stats, err
 	}
 
 	if err := os.MkdirAll(opts.OutputDir, 0o755); err != nil {
-		return fmt.Errorf("create output dir: %w", err)
+		return stats, fmt.Errorf("create output dir: %w", err)
 	}
 
 	magickPath, err := exec.LookPath("magick")
 	if err != nil {
-		return errors.New("ImageMagick 'magick' binary not found on PATH; install ImageMagick 7+")
+		return stats, errors.New("ImageMagick 'magick' binary not found on PATH; install ImageMagick 7+")
 	}
+
+	var mu sync.Mutex
+
+	// Build task list so each output is generated concurrently.
+	tasks := make([]func() error, 0, len(pngIcons)+2)
 
 	for _, icon := range pngIcons {
-		out := filepath.Join(opts.OutputDir, icon.Name)
-		if err := renderPNG(ctx, magickPath, opts.Input, out, icon.Size, opts.Color); err != nil {
+		icon := icon // capture
+		tasks = append(tasks, func() error {
+			out := filepath.Join(opts.OutputDir, icon.Name)
+			if err := renderPNG(ctx, magickPath, opts.Input, out, icon.Size, opts.Color); err != nil {
+				return err
+			}
+			mu.Lock()
+			stats.Outputs = append(stats.Outputs, out)
+			mu.Unlock()
+			if opts.Verbose {
+				fmt.Fprintf(os.Stderr, "wrote %s\n", out)
+			}
+			return nil
+		})
+	}
+
+	tasks = append(tasks, func() error {
+		icoOut := filepath.Join(opts.OutputDir, "favicon.ico")
+		if err := renderICO(ctx, magickPath, opts.Input, icoOut, opts.Color); err != nil {
 			return err
 		}
+		mu.Lock()
+		stats.Outputs = append(stats.Outputs, icoOut)
+		mu.Unlock()
 		if opts.Verbose {
-			fmt.Fprintf(os.Stderr, "wrote %s\n", out)
+			fmt.Fprintf(os.Stderr, "wrote %s\n", icoOut)
 		}
+		return nil
+	})
+
+	tasks = append(tasks, func() error {
+		svgOut := filepath.Join(opts.OutputDir, "favicon.svg")
+		if err := writeFaviconSVG(opts.Input, svgOut); err != nil {
+			return fmt.Errorf("write favicon.svg: %w", err)
+		}
+		mu.Lock()
+		stats.Outputs = append(stats.Outputs, svgOut)
+		mu.Unlock()
+		if opts.Verbose {
+			fmt.Fprintf(os.Stderr, "wrote %s\n", svgOut)
+		}
+		return nil
+	})
+
+	if err := runConcurrent(ctx, tasks, stats.Workers); err != nil {
+		return stats, err
 	}
 
-	icoOut := filepath.Join(opts.OutputDir, "favicon.ico")
-	if err := renderICO(ctx, magickPath, opts.Input, icoOut, opts.Color); err != nil {
-		return err
-	}
-	if opts.Verbose {
-		fmt.Fprintf(os.Stderr, "wrote %s\n", icoOut)
-	}
-
-	svgOut := filepath.Join(opts.OutputDir, "favicon.svg")
-	if err := writeFaviconSVG(opts.Input, svgOut); err != nil {
-		return fmt.Errorf("write favicon.svg: %w", err)
-	}
-	if opts.Verbose {
-		fmt.Fprintf(os.Stderr, "wrote %s\n", svgOut)
-	}
-
-	return nil
+	stats.Files = len(stats.Outputs)
+	stats.Duration = time.Since(start)
+	return stats, nil
 }
 
 func renderPNG(ctx context.Context, magickPath, input, output string, size int, color string) error {
@@ -151,6 +193,69 @@ func renderPNG(ctx context.Context, magickPath, input, output string, size int, 
 		return fmt.Errorf("render %s: %w", output, err)
 	}
 	return nil
+}
+
+// runConcurrent executes all tasks with a bounded worker pool.
+func runConcurrent(ctx context.Context, tasks []func() error, workers int) error {
+	workerCount := workerCount(workers)
+	taskCh := make(chan func() error)
+
+	var (
+		wg   sync.WaitGroup
+		once sync.Once
+		err  error
+	)
+
+	worker := func() {
+		defer wg.Done()
+		for task := range taskCh {
+			if ctx.Err() != nil {
+				return
+			}
+			if e := task(); e != nil {
+				once.Do(func() { err = e })
+			}
+		}
+	}
+
+	wg.Add(workerCount)
+	for i := 0; i < workerCount; i++ {
+		go worker()
+	}
+
+	for _, task := range tasks {
+		// Stop queueing new work if an error already occurred.
+		if err != nil {
+			break
+		}
+		taskCh <- task
+	}
+	close(taskCh)
+	wg.Wait()
+
+	if ctx.Err() != nil && err == nil {
+		err = ctx.Err()
+	}
+	return err
+}
+
+func workerCount(requested int) int {
+	if requested > 0 {
+		return requested
+	}
+	n := runtime.NumCPU()
+	if n < 2 {
+		return 2
+	}
+	return n
+}
+
+// Stats reports generation outcomes.
+type Stats struct {
+	Files    int
+	Duration time.Duration
+	Workers  int
+	Outputs  []string
 }
 
 func renderICO(ctx context.Context, magickPath, input, output string, color string) error {

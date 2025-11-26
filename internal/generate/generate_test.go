@@ -55,6 +55,15 @@ func TestOptionsValidate(t *testing.T) {
 	if err := opts.validate(); err == nil {
 		t.Fatalf("expected directory input to fail validation")
 	}
+
+	opts = Options{
+		Input:     in,
+		OutputDir: filepath.Join(tmp, "out"),
+		Workers:   -1,
+	}
+	if err := opts.validate(); err == nil {
+		t.Fatalf("expected negative workers to fail validation")
+	}
 }
 
 func containsAny(s string, needles []string) bool {

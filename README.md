@@ -27,12 +27,23 @@ Flags:
 - `-color`: optional hex color (e.g. `#ff6600`) to tint the icon
 - `-v` / `-verbose`: verbose logging
 - `-version`: print version and exit
+- `-jobs`: number of concurrent workers (default: CPU count)
+- `-json`: print summary (files, outputs, workers, duration) as JSON
 
 Example:
 
 ```sh
 faviconinator -out dist -color "#3366ff" bl_square.svg
 ```
+
+Platform reference links:
+
+- Favicons: [MDN link relation `icon`](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/icon)
+- Android / Chrome: [Web App Manifest icons](https://developer.mozilla.org/en-US/docs/Web/Manifest/icons)
+- Apple touch icons: [`apple-touch-icon` link relation](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link#attr-apple-touch-icon)
+- Microsoft tiles: [`msapplication-*` meta tags](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name#msapplication-tileimage)
+
+Stats: command prints total assets, destination, duration, and worker count after completion.
 
 Outputs:
 
@@ -68,13 +79,6 @@ Add to your site (HTML example):
 <meta name="msapplication-TileColor" content="#ffffff">
 <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
 ```
-
-Platform reference links:
-
-- Favicons: [MDN link relation `icon`](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/icon)
-- Android / Chrome: [Web App Manifest icons](https://developer.mozilla.org/en-US/docs/Web/Manifest/icons)
-- Apple touch icons: [`apple-touch-icon` link relation](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link#attr-apple-touch-icon)
-- Microsoft tiles: [`msapplication-*` meta tags](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name#msapplication-tileimage)
 
 ## Development
 
