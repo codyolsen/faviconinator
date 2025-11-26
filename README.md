@@ -2,27 +2,6 @@
 
 ![CI](https://github.com/codyolsen/faviconinator/actions/workflows/ci.yml/badge.svg)
 
-<p>
-  <img alt="icon 32px" src="internal/generate/testdata/complexahexagon.svg" width="32" height="32" />
-  <img alt="icon 36px" src="internal/generate/testdata/complexahexagon.svg" width="36" height="36" />
-  <img alt="icon 48px" src="internal/generate/testdata/complexahexagon.svg" width="48" height="48" />
-  <img alt="icon 57px" src="internal/generate/testdata/complexahexagon.svg" width="57" height="57" />
-  <img alt="icon 60px" src="internal/generate/testdata/complexahexagon.svg" width="60" height="60" />
-  <img alt="icon 70px" src="internal/generate/testdata/complexahexagon.svg" width="70" height="70" />
-  <img alt="icon 72px" src="internal/generate/testdata/complexahexagon.svg" width="72" height="72" />
-  <img alt="icon 76px" src="internal/generate/testdata/complexahexagon.svg" width="76" height="76" />
-  <img alt="icon 96px" src="internal/generate/testdata/complexahexagon.svg" width="96" height="96" />
-  <img alt="icon 114px" src="internal/generate/testdata/complexahexagon.svg" width="114" height="114" />
-  <img alt="icon 120px" src="internal/generate/testdata/complexahexagon.svg" width="120" height="120" />
-  <img alt="icon 144px" src="internal/generate/testdata/complexahexagon.svg" width="144" height="144" />
-  <img alt="icon 150px" src="internal/generate/testdata/complexahexagon.svg" width="150" height="150" />
-  <img alt="icon 152px" src="internal/generate/testdata/complexahexagon.svg" width="152" height="152" />
-  <img alt="icon 180px" src="internal/generate/testdata/complexahexagon.svg" width="180" height="180" />
-  <img alt="icon 192px" src="internal/generate/testdata/complexahexagon.svg" width="192" height="192" />
-  <img alt="icon 310px" src="internal/generate/testdata/complexahexagon.svg" width="310" height="310" />
-  <img alt="icon 512px" src="internal/generate/testdata/complexahexagon.svg" width="512" height="512" />
-</p>
-
 Benchmarks (darwin/arm64, ImageMagick on PATH):
 - workers=1: ~4.25s/op
 - workers=16: ~0.47s/op
@@ -139,3 +118,24 @@ make build
 ```
 
 `make build` writes the binary to `bin/faviconinator`.
+
+<p>
+  <img alt="icon 32px" src="internal/generate/testdata/complexahexagon.svg" width="32" height="32" />
+  <img alt="icon 36px" src="internal/generate/testdata/complexahexagon.svg" width="36" height="36" />
+  <img alt="icon 48px" src="internal/generate/testdata/complexahexagon.svg" width="48" height="48" />
+  <img alt="icon 57px" src="internal/generate/testdata/complexahexagon.svg" width="57" height="57" />
+  <img alt="icon 60px" src="internal/generate/testdata/complexahexagon.svg" width="60" height="60" />
+  <img alt="icon 70px" src="internal/generate/testdata/complexahexagon.svg" width="70" height="70" />
+  <img alt="icon 72px" src="internal/generate/testdata/complexahexagon.svg" width="72" height="72" />
+  <img alt="icon 76px" src="internal/generate/testdata/complexahexagon.svg" width="76" height="76" />
+  <img alt="icon 96px" src="internal/generate/testdata/complexahexagon.svg" width="96" height="96" />
+  <img alt="icon 114px" src="internal/generate/testdata/complexahexagon.svg" width="114" height="114" />
+  <img alt="icon 120px" src="internal/generate/testdata/complexahexagon.svg" width="120" height="120" />
+  <img alt="icon 144px" src="internal/generate/testdata/complexahexagon.svg" width="144" height="144" />
+  <img alt="icon 150px" src="internal/generate/testdata/complexahexagon.svg" width="150" height="150" />
+  <img alt="icon 152px" src="internal/generate/testdata/complexahexagon.svg" width="152" height="152" />
+  <img alt="icon 180px" src="internal/generate/testdata/complexahexagon.svg" width="180" height="180" />
+  <img alt="icon 192px" src="internal/generate/testdata/complexahexagon.svg" width="192" height="192" />
+  <img alt="icon 310px" src="internal/generate/testdata/complexahexagon.svg" width="310" height="310" />
+  <img alt="icon 512px" src="internal/generate/testdata/complexahexagon.svg" width="512" height="512" />
+</p>
